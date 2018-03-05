@@ -1,0 +1,201 @@
+<div class="shake-main">
+    <p class="shake-loading">
+        <img src="/images/loading.png">
+        稍等一下，老板正在往你的红包塞钱
+    </p>
+    <div class="shake-main-top">
+        <img class="shake-image1" src="/images/packet.png">
+    </div>
+    <div class="shake-main-bottom">
+        <img class="shake-image" src="/images/packet.png">
+    </div>
+    <p class="shake-title">摇一摇抢红包</p>
+</div>
+<div class="shake-over-main">
+    <p>共抢到<span class="shake-total"></span>元红包</p>
+    <p>击败了全场<span class="shake-defeat"></span>%的人</p>
+    <p><span class="shake-amount"></span>元</p>
+    <p>你的运气已累积到下个红包</p>
+    <p>加把劲</p>
+    <div>
+        <img src="/images/close.png">
+    </div>
+</div>
+<div class="shake-notice">
+    <p>
+        <span>!</span>
+    </p> 
+    &nbsp; 活动尚未开始，请留意大屏幕倒计时！
+</div>
+<audio preload="auto" hidden="true" id="packet-audio" src="/audio/packet.mp3" controls></audio>
+<audio preload="auto" hidden="true" id="packet-moneyAudio" src="/audio/money.wav" controls></audio>
+<script type="text/javascript">
+(function($) {
+    var SHAKE_THRESHOLD = 1888;
+    var last_update = 0;
+    var x = y = z = last_x = last_y = last_z = 0;
+    var is_shake = true;
+    var gamestart = false;
+    var hold_time;
+    var doms = {
+        overMain: $('.shake-over-main'),
+        top: $('.shake-main-top'),
+        bottom: $('.shake-main-bottom'),
+        shake_p: $('.shake-title'),
+        close: $('.shake-over-main img'),
+        notice: $('.shake-notice'),
+        loading: $('.shake-loading'),
+        allP: $('.shake-over-main>p'),
+        redP: $('.shake-over-main p:lt(3)'),
+        noRedP: $('.shake-over-main p:gt(2)'),
+        audio: $('#packet-audio')[0],
+        moneyAudio: $('#packet-moneyAudio')[0]
+    };
+
+    // 切换至开始状态
+    function update_to_start() {
+        doms.notice.css('display', 'none');
+        gamestart = true;
+    }
+
+    // 切换至结束状态
+    function update_to_end() {
+        gamestart = false;
+        doms.notice.css('display', 'block');
+        doms.notice.text('活动已经结束，请明年再次参与。');
+    }
+    // 监听活动开始
+    socket.on('_server_push_/wx_packet_start', function(err, data) {
+        if (err) {
+            alert(err);
+        }else{
+            update_to_start();
+            hold_time = (data.hold_time || 5) * 0.7;
+        }
+    });
+
+    // 监听活动结束
+    socket.on('_server_push_/wx_packet_end', function(err, data) {
+        if (!err) {
+            update_to_end();
+        }
+    });
+
+    // 获取是否开始状态
+    socket.emit('wx/packet/status', null, function(err, data) {
+        if (data) {
+            switch (data.status) {
+                case 2:
+                    update_to_start();
+                    hold_time = (data.hold_time || 5) * 0.7;
+                    break;
+                case 3:
+                    update_to_end();
+                    break;
+            }
+        }
+    });
+    
+    // 初始化
+    function init() {
+        if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', deviceMotionHandler, false);
+        } else {
+            alert('本设备不支持devicemotion事件');
+        }
+        var vibrateSupport = "vibrate" in navigator;
+        if (vibrateSupport) {
+            navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
+        }
+        doms.close.on('click', function() {
+            hidden();
+        });
+    }
+    // 是否摇了
+    function deviceMotionHandler(eventData) {
+        var acceleration = eventData.accelerationIncludingGravity;
+        var curTime = new Date().getTime();
+        if ((curTime - last_update) > 100) {
+            var diffTime = curTime - last_update;
+            last_update = curTime;
+            x = acceleration.x;
+            y = acceleration.y;
+            z = acceleration.z;
+            var speed = Math.abs(x + y + z - last_x - last_y - last_z) / diffTime * 10000;
+            var status = document.getElementById("status");
+            if (speed > SHAKE_THRESHOLD && is_shake) {
+                isShake();
+            }
+            last_x = x;
+            last_y = y;
+            last_z = z;
+        }
+    }
+    // 摇了之后的操作
+    function isShake() {
+        if (gamestart) {
+            try {
+                navigator.vibrate(200);
+            } catch (e) {}
+            is_shake = false;
+            loading();
+            setTimeout(function() {
+                socket.emit('wx/packet/take', null, function(err, data) {
+                    if (err) {
+                        alert('错误是:'+err);
+                    } else {
+                        if (data.status == 2) {
+                            if(data.fake){
+                                noRed();
+                            }else{
+                                showRed(data); 
+                            }
+                        } else {
+                            // 未开始或已结束
+                            hidden();
+                        }
+                    }
+                });
+            }, hold_time * 1000);
+        } else {
+            alert('抱歉，暂时无法使用该功能。');
+        }
+    }
+    // 弹出有钱的
+    function showRed(data) {
+        doms.moneyAudio.play();
+        doms.noRedP.hide();
+        doms.overMain.addClass('shake-show-over');
+        doms.loading.hide();
+        $('.shake-amount').text(data.amount);
+        $('.shake-total').text(data.total);
+        $('.shake-defeat').text(data.defeat_per);
+    }
+
+    // 弹出没钱的
+    function noRed(argument) {
+        doms.redP.hide();
+        doms.overMain.addClass('shake-show-over');
+        doms.loading.hide();
+    }
+    // loading
+    function loading() {
+        doms.audio.play();
+        doms.top.addClass('shake-show-top');
+        doms.bottom.addClass('shake-show-bottom');
+        doms.shake_p.hide();
+        doms.loading.show();
+    }
+
+    function hidden() {
+        doms.overMain.removeClass('shake-show-over');
+        doms.top.removeClass('shake-show-top');
+        doms.bottom.removeClass('shake-show-bottom');
+        doms.shake_p.show();
+        is_shake = true;
+        doms.allP.show();
+    }
+
+    init();
+})(window.jQuery);
+</script>

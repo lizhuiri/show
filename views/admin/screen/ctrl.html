@@ -1,0 +1,31 @@
+<div class="page-button">
+	<button class="btn btn-danger ctrl-button" data-key="open">打开大屏页面</button>
+</div>
+<div class="page-button">
+	<button class="btn btn-success ctrl-button" data-key="wall">切换到签到页</button>
+</div>
+<div class="page-button">
+	<button class="btn btn-primary ctrl-button" data-key="packet">切换到红包页</button>
+</div>
+<div class="page-button">
+	<button class="btn btn-info ctrl-button" data-key="prize">切换到抽奖页</button>
+</div>
+<script>
+(function() {
+	var open_window = null;
+	$('.ctrl-button').on('click', function(evt) {
+		var btn = $(this);
+		var key = btn.attr('data-key');
+		
+		if (key === 'open') {
+			open_window = window.open('/');
+		} else {
+			socket.emit('/admin/screen/switch', {page: key});
+		}
+
+		if (open_window && open_window.focus) {
+			open_window.focus();
+		} 
+	});
+})();
+</script>

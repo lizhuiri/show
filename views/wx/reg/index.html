@@ -1,0 +1,395 @@
+<link rel="stylesheet" href="https://res.wx.qq.com/open/libs/weui/1.1.2/weui.min.css">
+<script src="/javascripts/hammer.js"></script>
+<style>
+body {
+    background-color: #f8f8f8;
+}
+.page {
+	overflow: hidden;
+}
+.weui-input {
+	text-align: right;
+}
+.weui-input[disabled] {
+	color: #ddd;
+}
+.pr15 {
+	padding-right: 10px;
+}
+.avatar-uploader {
+	height: 50px;
+	position: relative;
+	text-align: right;
+	overflow: hidden;
+}
+.avatar-uploader input {
+	height: 50px;
+}
+.avatar-uploader-preview {
+	position: relative;
+	display: none;
+	width: 50px;
+	height: 50px;
+	overflow: hidden;
+}
+.avatar-uploader-preview img {
+	width: 100%;
+	height: 100%;
+	border: none;
+	display: block;
+}
+.avatar-uploader input[type="file"] {
+	position: absolute;
+	z-index: 2;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+}
+.avatar-uploader-has input[type="text"] {
+	display: none;
+}
+.avatar-uploader-has .avatar-uploader-preview {
+	display: inline-block;
+}
+/*编辑头像*/
+.reg-clip-container {
+	display: none;
+	position: absolute;
+	background-color: #000;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	z-index: 100;
+	overflow: hidden;
+}
+.reg-clip-image {
+	position: absolute;
+	display: block;
+	border: none;
+	/*let and top start with clip-area's content start*/
+	margin-left: 5vw;
+	margin-top: calc((100vh - 90vw) / 2);
+}
+.reg-clip-area {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 200;
+	background: transparent;
+	border-left-width: 5vw;
+	border-right-width: 5vw;
+	border-top-width: calc((100vh - 90vw) / 2);
+	border-bottom-width: calc((100vh - 90vw) / 2);
+	border-style: solid;
+	border-color: rgba(0, 0, 0, 0.5);
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+}
+.reg-clip-border {
+	width: 100%;
+	height: 100%;
+	border: 1px solid #fff;
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	pointer-events: none;
+}
+button.reg-clip-button {
+	position: absolute;
+    bottom: 0;
+    left: 30%;
+    width: 40%;
+    margin: 0 auto 30px;
+    z-index: 300;
+}
+</style>
+<div class="page">
+	<div class="form">
+	    <form action="/wx/reg/submit" method="post" enctype="multipart/form-data" >
+	        <input type="hidden" name="ticket" value="{{ticket}}">
+	        <div class="weui-cells weui-cells_form">
+	            <div class="weui-cell">
+	                <div class="weui-cell__hd">
+	                    <label class="weui-label">头像</label>
+	                </div>
+	                <div class="weui-cell__bd">
+						<div class="avatar-uploader {{#if avatar}}avatar-uploader-has{{/if}}" id="avatar_uploader">
+							<input class="weui-input" type="text" placeholder="未上传">
+							<input type="file" accept="image/*" required name="avatar" id="avatar_input">
+							<input id="origin_w" type= "hidden" name="ow" value="">
+							<input id="origin_h" type= "hidden" name="oh" value="">
+							<input id="clip_x" type= "hidden" name="x" value="">
+							<input id="clip_y" type= "hidden" name="y" value="">
+							<input id="clip_w" type= "hidden" name="w" value="">
+							<input id="clip_h" type= "hidden" name="h" value="">
+							<div class="avatar-uploader-preview" id="avatar_preview">
+								<img src="{{avatar}}">
+							</div>
+						</div>
+	                </div>
+	            </div>
+	            <div class="weui-cell">
+	                <div class="weui-cell__hd">
+	                    <label for="" class="weui-label">姓名</label>
+	                </div>
+	                <div class="weui-cell__bd pr15">
+	                    <input class="weui-input" type="text" name="name" placeholder="{{name}}" disabled>
+	                </div>
+	            </div>
+	        </div>
+	        <div class="weui-btn-area">
+	        	<input class="weui-btn weui-btn_primary" type="submit" value="确定">
+	        </div>
+	    </form>
+	</div>
+</div>
+<div id="clip_container" class="reg-clip-container">
+	<button class="weui-btn weui-btn_primary reg-clip-button" id="clip_button" >使用</button>
+	<img src="{{avatar}}" class="reg-clip-image" id="clip_image">
+	<div id="clip_area" class="reg-clip-area">
+		<div class="reg-clip-border"></div>
+	</div>
+</div>
+<script>
+(function(BOM, avatar) {
+	var URL_O = BOM.webkitURL || BOM.URL || BOM;
+
+	// 上传容器
+	var avatar_uploader = document.getElementById("avatar_uploader");
+	// 预览DOM
+	var preview_dom = document.getElementById('avatar_preview');
+	// 预览图片
+	var preview_image = preview_dom.getElementsByTagName('img')[0];
+	// 文件上传框
+	var file_input =  document.getElementById('avatar_input');
+	// 剪裁容器
+	var clip_container = document.getElementById('clip_container');
+	// 剪裁展示图片
+	var clip_image = document.getElementById("clip_image");
+	// 剪裁确认按钮
+	var clip_button = document.getElementById('clip_button');
+	// 剪裁事件响应区
+	var clip_area = document.getElementById('clip_area');
+
+	// 隐藏表单域
+	var hidden_clip_zoom = document.getElementById("clip_zoom");
+	var hidden_origin_w = document.getElementById("origin_w");
+	var hidden_origin_h = document.getElementById("origin_h");
+	var hidden_clip_x = document.getElementById("clip_x");
+	var hidden_clip_y = document.getElementById("clip_y");
+	var hidden_clip_w = document.getElementById("clip_w");
+	var hidden_clip_h = document.getElementById("clip_h");
+
+	var clip_hammer = new Hammer(clip_area);
+	clip_hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+	clip_hammer.get('pinch').set({ enable: true });
+
+	// 初始化
+	function init() {
+		// 文件变更事件
+		file_input.addEventListener('change', function(evt) {
+			var file = evt.target.files[0];
+			if (file) {
+				clip_container.style.display = 'block';
+				clip_image_load(file);
+			}
+		});
+	}
+
+	// 图片加载剪裁
+	function clip_image_load(file) {
+		// 加载之前要重设尺寸
+		clip_image.style.width = '';
+		clip_image.style.height = '';
+		clip_image.onload = function() {
+			clip_init(this.width, this.height);
+            URL_O.revokeObjectURL(this.src);
+		}
+		preview_image.onload = function() {
+			URL_O.revokeObjectURL(this.src);
+		}
+		clip_image.src = preview_image.src = URL_O.createObjectURL(file);
+	}
+
+	// 图片剪裁初始化
+	// @image_origin_width: 图片原始宽度
+	// @image_origin_height: 图片原始高度
+	function clip_init(image_origin_width, image_origin_height) {
+		// 剪裁框宽度
+		var clip_w = clip_area.clientWidth;
+		// 剪裁框高度 
+		var clip_h = clip_area.clientHeight;
+		// 图片长宽比
+		var ratio = image_origin_width / image_origin_height;
+		// 缩放后宽度
+		var image_w;
+		// 缩放后高度
+		var image_h;
+		// 图片水平位置
+		var image_x;
+		// 图片垂直位置
+		var image_y;
+		
+		// 位置限制
+		function image_pos_limit() {
+			// 宽度限制
+			// 不能大于0
+			image_x = Math.min(0, image_x);
+			// 取正值不能大于图片可裁剪的最大宽度
+			image_x = Math.max(clip_w - image_w, image_x);
+
+			// 高度限制
+			// 不能大于0
+			image_y = Math.min(0, image_y);
+			// 取正值不能大于图片可裁剪的最大高度
+			image_y = Math.max(clip_h - image_h, image_y);
+		}
+
+		// 尺寸限制
+		function image_size_limit() {
+			if (ratio > 1) {
+				// 高度不能小于裁剪尺寸
+				image_h = Math.max(clip_h, image_h);
+				image_w = image_origin_width * image_h / image_origin_height;
+			} else {
+				// 宽度不能小于剪裁尺寸
+				image_w = Math.max(clip_w, image_w);
+				image_h = image_origin_height * image_w / image_origin_width;
+			}
+		}
+
+		// 重绘剪裁图片的位置及尺寸
+		function repaint_clip_image() {
+			clip_image.style.width = image_w + 'px';
+			clip_image.style.height = image_h + 'px';
+			clip_image.style.left = image_x + 'px';
+			clip_image.style.top = image_y + 'px';
+		}
+
+		// 以较小边占满剪裁框
+		if (ratio > 1) {
+			image_h = clip_h;
+			image_w = image_origin_width * image_h / image_origin_height;
+		} else {
+			image_w = clip_w;
+			image_h = image_origin_height * image_w / image_origin_width;
+		}
+
+		// 默认水平垂直居中
+		image_x = -(image_w - clip_w) / 2;
+		image_y = -(image_h - clip_h) / 2;
+
+		// 初始化渲染图片
+		repaint_clip_image();
+
+		// 拖拽及缩放事件
+		// 绑定之前要先解绑
+		clip_hammer.off('panstart panmove pinchstart pinchin pinchout');
+		var before_pan_x, before_pan_y;
+		// 拖拽
+		clip_hammer.on('panstart panmove', function(evt) {
+			switch(evt.type) {
+				case 'panstart':
+					before_pan_x = image_x;
+					before_pan_y = image_y;
+				break;
+				case 'panmove':
+					image_x = before_pan_x + evt.deltaX;
+					image_y = before_pan_y + evt.deltaY;
+					image_pos_limit();
+					repaint_clip_image();
+				break;
+			}
+		});
+		var last_scale;
+		// 缩放
+		clip_hammer.on('pinchstart pinchin pinchout', function(evt) {
+			switch(evt.type) {
+				case 'pinchstart':
+					last_scale = 1;
+				break;
+				case 'pinchin':
+				case 'pinchout':
+					var range = 0.05;
+					var scale = 1;
+					if (last_scale < evt.scale) {
+						scale += range;
+					} else if (last_scale > evt.scale) {
+						scale -= range;
+					}
+					last_scale = evt.scale;
+
+					// 缩放前位置
+					var o_w = image_w;
+					var o_h = image_h;
+
+					// 缩放后图片尺寸
+					image_w *= scale;
+					image_h *= scale;
+					image_size_limit();
+
+					// 缩放后偏移
+					if (o_w - clip_w === 0) {
+						// 之前是0，就居中缩放
+						image_x = -(image_w - o_w) / 2;
+					} else {
+						// 等比缩放
+						image_x = image_x * (image_w - clip_w) / (o_w - clip_w);
+					}
+
+					if (o_h - clip_h === 0) {
+						// 之前是0，就居中缩放
+						image_y = -(image_h - o_h) / 2;
+					} else {
+						// 等比缩放
+						image_y = image_y * (image_h - clip_h) / (o_h - clip_h);
+					}
+
+					image_pos_limit();
+
+					repaint_clip_image();
+				break;
+			}
+
+		});
+		// 剪裁确认按钮点击事件
+		// 用click绑定就可以，addEventListener还要去解绑
+		// 将剪裁数据追加到表单
+		clip_button.onclick = function(evt) {
+			var zoom = image_origin_width / image_w;
+			hidden_origin_w.value = image_origin_width;
+			hidden_origin_h.value = image_origin_height;
+			hidden_clip_x.value = Math.round(-image_x * zoom);
+			hidden_clip_y.value = Math.round(-image_y * zoom);
+			hidden_clip_w.value = Math.round(clip_w * zoom);
+			hidden_clip_h.value = Math.round(clip_h * zoom);
+
+			clip_container.style.display = 'none';
+			// 渲染上传框的预览图片
+			avatar_uploader.classList.add('avatar-uploader-has');			
+			var preview_size = preview_dom.clientWidth;
+			// 预览的缩放比例
+			var preview_zoom = preview_size / clip_w;
+			preview_image.style.width = image_w * preview_zoom + 'px';
+			preview_image.style.height = image_h * preview_zoom + 'px';
+			preview_image.style.position = 'absolute';
+			preview_image.style.left = image_x * preview_zoom + 'px';
+			preview_image.style.top = image_y * preview_zoom + 'px';
+		};
+	}
+
+	function log(text) {
+		var dom = document.createElement('div');
+		dom.innerHTML = text;
+		document.querySelector(".reg-clip-border").appendChild(dom);
+	}
+
+	init();
+})(this);
+
+</script>

@@ -1,0 +1,484 @@
+<style>
+    body {
+        background: url(/images/screen_bg.jpg) top center no-repeat;
+        background-size: 100% 100%;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 42px;
+    }
+    
+    .logo {
+        width: 11.8vw;
+        height: 7.8vh;
+    }
+    
+    .logo img {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .subject-img {
+        width: 26.4vw;
+        height: 11.4vh;
+    }
+    
+    .subject-img img {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .sign-in-num-con {
+        width: 11.8vw;
+        font-family: PingFangSC-Medium;
+        font-size: 36px;
+        color: #FFFFFF;
+        letter-spacing: 10px;
+    }
+    
+    .sign-in-num {
+        display: inline-block;
+    }
+    
+    .main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        z-index: 2;
+    }
+    
+    ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        height: 100vh;
+        margin-top: 20px;
+        position: relative;
+    }
+    
+    li {
+        display: block;
+        box-sizing: border-box;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 5px solid transparent;
+        background-clip: padding-box;
+        background-color: #fff;
+        padding: 3px;
+        opacity: .3;
+    }
+    
+    li img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+
+    .wall-guest {
+        background-color: transparent;
+    }
+
+    .signed {
+        opacity: 1;
+    }
+    
+    @keyframes _slideIn {
+        0% {
+            left: 100%;
+            transform: scale(1);
+        }
+        30% {
+            left: 0;
+            transform: scale(1);
+        }
+        70% {
+            left: 0;
+            transform: scale(1.5, 1.5);
+        }
+        100% {
+            left: 0;
+            transform: scale(1);
+        }
+    }
+    
+    .fade-in-container {
+        display: flex;
+        align-items: stretch;
+        position: absolute;
+        left: 100%;
+        top: 0;
+        z-index: 1;
+        visibility: hidden;
+        transform-origin: 0 0;
+    }
+    
+    .fade-in-img {
+        opacity: 1;
+        border-radius: 50%;
+        overflow: hidden;
+        position: absolute;
+        z-index: 1;
+    }
+    
+    .fade-in-img img {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .slide-in {
+        animation: _slideIn 3s ease-in;
+        visibility: visible;
+    }
+    
+    .slide-in-end {
+        left: 0;
+        top: 0;
+    }
+    
+    .animate-on-transforms {
+        transition: all 1s ease-in-out;
+        transform-origin: left top;
+    }
+    
+    .fade-in-text {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 8px;
+        font-size: 34px;
+        font-weight: 300;
+        color: #000;
+        opacity: 0.8;
+        background-color: #fff;
+        position: relative;
+        border-radius: 0 50% 50% 0;
+    }
+    ._filer {
+        width: 100vw;
+        height: 100vh;
+        position: absolute;
+        z-index: 1;
+    }
+    ._filer img {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+<section class="main">
+    <header>
+        <div class="logo">
+            <img src="/images/screen_logo.png" alt="舜飞logo">
+        </div>
+        <div class="subject-img">
+            <img src="/images/screen_text.png" alt="主题文字">
+        </div>
+        <div class="sign-in-num-con">
+            <span>已签到:</span>
+            <span class="sign-in-num">{{signNum}}</span>
+        </div>
+    </header>
+    <ul>
+        {{#each userData}}
+        <li class="wall-{{this._id}}{{#if signed}} signed{{/if}}">{{#if avatar}}<img src="{{this.avatar}}">{{/if}}</li>
+        {{/each}}
+        <div class="fade-in-container">
+            <div class="fade-in-img"></div>
+            <div class="fade-in-text"></div>
+        </div>
+    </ul>
+
+</section>
+<div class="_filer">
+    <img src="/images/screen_bg_filter.png">
+</div>
+<script>
+    (function(window, document, $, FadeIn, layout) {
+        var config = {
+            num: +'{{subNum}}', //总人数
+            overtime: 5, //超时隐藏
+            transitionDuration: 3 //透明度1-0渐变时间
+        };
+
+        var info = layout({
+            num: config.num,
+            debug: false
+        });
+        window.onresize = function(evt) {
+            layout({
+                num: config.num,
+                debug: false
+            });
+        }
+
+        var fadeIn = new FadeIn({
+            num: config.num, //总人数
+            rectWidth: info.rectWidth * 2
+        });
+        var signNum = +'{{signNum}}';
+        var $signNum = $('.sign-in-num');
+        socket.on('_server_push_/wall_sign_in', function(err, data) {
+            if (err) {
+                console.error(err);
+            }
+            fadeIn.add(data);
+            $signNum.text(++signNum);
+        });
+
+    })(window, document, jQuery, (function(win, doc) {
+        class FadeIn {
+            constructor(options) {
+                var sub = options.num;
+                this.fadeInImg = null;
+                this.fadeInText = null;
+                this.created = false;
+                this.imgDOM = null;
+
+                this.options = options;
+                this.container = document.querySelector('.fade-in-container');
+
+                this.Query = [];
+                this.exec = false;
+            }
+            createFadeInImg(data) {
+                var rectWidth = this.options.rectWidth;
+
+                var fadeInImg = document.querySelector('.fade-in-img');
+                fadeInImg.style.width = `${rectWidth}px`;
+                fadeInImg.style.height = `${rectWidth}px`;
+                this.fadeInImg = fadeInImg;
+
+                var _text = document.querySelector('.fade-in-text');
+                _text.style.left = `${rectWidth/2}px`;
+                _text.style.paddingLeft = `${rectWidth/2}px`;
+                _text.style.height = `${rectWidth}px`;
+                _text.style.borderRadius = `0 ${rectWidth/2}px ${rectWidth/2}px 0`;
+                _text.style.minWidth = `${rectWidth * 2}px`;
+                _text.innerText = data.name;
+                this.fadeInText = _text;
+
+                this.created = true;
+                var _imgDOM = this.createImgDOM(data);
+                this.fadeInImg.appendChild(_imgDOM);
+            }
+
+            createImgDOM(data) {
+                var imgDOM = document.createElement('img');
+                imgDOM.src = data.avatar;
+                this.imgDOM = imgDOM;
+                return imgDOM;
+            }
+            setFadeInCon(data) {
+                this.fadeInText.innerText = data.name;
+                var _imgDOM = this.createImgDOM(data);
+                this.fadeInImg.appendChild(_imgDOM);
+            }
+            retFadeInImgCon() {
+                this.container.className = 'fade-in-container';
+                this.fadeInImg.className = 'fade-in-img';
+                this.fadeInImg.style.transform = '';
+                this.fadeInImg.style.opacity = '';
+                this.fadeInText.className = 'fade-in-text'
+                this.fadeInText.style.opacity = '';
+                this.fadeInText.style.transform = '';
+            }
+
+            add(data) {
+                var f = (stepCallback) => {
+                    if (this.created) {
+                        this.setFadeInCon(data);
+                    } else {
+                        this.createFadeInImg(data);
+                    }
+
+                    this._slide(() => {
+                        this._flip(() => {
+                            stepCallback.call(this);
+                        }, data);
+                    })
+                }
+                this.Query.push(f);
+                this.execute();
+            }
+            execute() {
+                if (this.Query.length) {
+                    if (this.exec === false) {
+                        this.exec = true;
+                        var f = this.Query.shift();
+                        setTimeout(() => {
+                            f(() => {
+                                this.exec = false;
+                                this.execute();
+                            });
+                        }, 0);
+                    }
+                }
+            }
+            _slide(callback) {
+                this.container.classList.add('slide-in');
+                let animationendCallback = () => {
+                    this.container.classList.add('slide-in-end'); //改变animation模式 && 更正位置
+                    this.container.removeEventListener('animationend', animationendCallback);
+                    callback();
+                }
+                this.container.addEventListener('animationend', animationendCallback);
+            }
+            _flip(callback, data) {
+                var endDOMEle;
+                if(data.guest) {
+                    endDOMEle = document.querySelector(`.wall-guest`);
+                    endDOMEle.className = `wall-${data._id}`;
+                }else{
+                    endDOMEle = document.querySelector(`.wall-${data._id}`)
+                    if(!endDOMEle) {
+                        endDOMEle = document.querySelector(`.wall-guest`);
+                        endDOMEle.className = `wall-${data._id}`;
+                    }
+                }
+                var start_pos = this.fadeInImg.getBoundingClientRect();
+                var end_pos = endDOMEle.getBoundingClientRect();
+                var x = end_pos.left - start_pos.left;
+                var y = end_pos.top - start_pos.top;
+                
+                this.fadeInImg.classList.add('animate-on-transforms');
+                this.fadeInImg.style.transform = `translate(${x}px, ${y}px) scale(0.5)`;
+                this.fadeInImg.style.opacity = .1;
+
+                this.fadeInText.classList.add('animate-on-transforms');
+                this.fadeInText.style.transform = `translateX(30vw)`;
+                this.fadeInText.style.opacity = 0;
+                let transitionEndCallback = (evt) => {
+                    if (evt.propertyName === 'transform') {
+                        this.fadeInImg.removeEventListener('transitionend', transitionEndCallback);
+
+                        if(data.guest || !endDOMEle.firstElementChild) {
+                            endDOMEle.appendChild(this.imgDOM);
+                        }else {
+                            this.fadeInImg.removeChild(this.imgDOM);
+                        }
+                        endDOMEle.classList.add('signed');
+                        this.retFadeInImgCon();
+                        callback();
+                    }
+                }
+                this.transitionEndCallback = transitionEndCallback;
+                this.fadeInImg.addEventListener('transitionend', transitionEndCallback);
+            }
+        }
+        return FadeIn;
+    })(window, document), (function($) {
+        function layout(config) {
+            var config = config || {};
+            var sub = config.num; //屏幕显示的方形总数
+            var main = {
+                vertical: config.vertical || 0, //main区域上下留出的间距
+                horizontal: config.horizontal || 0 //main区域左右流出的间距
+            }
+
+            var actualRectWidth;
+            var clientWidth = document.body.clientWidth - main.horizontal;
+            var clientHeight = document.querySelector('.main>ul').clientHeight - main.vertical;
+
+            var rectWidth = Math.sqrt(clientWidth * clientHeight / sub);
+
+            var row = Math.floor(clientHeight / rectWidth);
+            var col = Math.floor(clientWidth / rectWidth);
+
+            if (!(row * col === sub)) {
+                var f_r = factor(sub, row);
+                var f_r_c = sub / f_r;
+                var r_rectWidth = Math.min(clientHeight / f_r, clientWidth / f_r_c);
+
+                var f_c = factor(sub, col);
+                var f_c_r = sub / f_c
+                var c_rectWidth = Math.min(clientWidth / f_c, clientHeight / f_c_r);
+
+                if (config.debug) {
+                    console.log(`f_r:${f_r} r_rectWidth:${r_rectWidth} f_c:${f_c} c_rectWidth:${c_rectWidth}`);
+                }
+                if (r_rectWidth >= c_rectWidth) {
+                    row = f_r;
+                    col = f_r_c;
+                    actualRectWidth = r_rectWidth;
+                } else {
+                    row = f_c_r;
+                    col = f_c;
+                    actualRectWidth = c_rectWidth;
+                }
+            }
+
+            var $mainul = $('.main').find('ul').css({
+                width: actualRectWidth * col
+            });
+
+            $mainul.find('li').css({
+                width: actualRectWidth,
+                height: actualRectWidth,
+            });
+
+            if (config.debug) {
+                console.log(`
+            row: ${row} col:${col}
+            actualRectWidth:${actualRectWidth}
+            actualClientWidth: ${actualRectWidth * col}
+            actualClientHeight: ${actualRectWidth * row}
+            clientWidth: ${clientWidth}
+            clientHeight: ${clientHeight}
+            `)
+            }
+            //获取sub因数分解与row col 最近的数
+            function factor(sub, x) {
+                var up = x,
+                    down = x;
+                var r_up = 1,
+                    r_down = 1;
+                do {
+                    if (r_up) {
+                        r_up = sub % up;
+                        if (r_up) {
+                            up++;
+                        }
+                    }
+                    if (r_down) {
+                        r_down = sub % down;
+                        if (r_down) {
+                            down--;
+                        }
+                    }
+
+                }
+                while (r_up !== 0 || r_down !== 0)
+                if (config.debug) {
+                    console.log(`x:${x} down: ${down} up:${up}`)
+                }
+                var r = (up - x) - (x - down);
+                if (r > 0) {
+                    return down;
+                } else {
+                    return up;
+                }
+            }
+
+            const info = {
+                rectWidth: actualRectWidth,
+                row: row,
+                col: col
+            }
+            return info;
+        }
+        return layout;
+    })(jQuery))
+</script>

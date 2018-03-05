@@ -1,0 +1,36 @@
+<!-- 剩余红包 -->
+<style>
+	body{font-family: "Microsoft YaHei";background: url('/images/screenBg.png');}
+	p{margin:0;padding: 0}
+	.packet-remain {margin-top:12%;text-align: center;}
+	.packet-remain .surplusPacket{font-size:100px;color:#FCDD17;font-family: "Microsoft YaHei"}
+	.packet-remain .packetNum{color:white;margin-top: 20px;font-size: 72px}
+	.packet-remain .packetNum .num{font-size:200px;}
+</style>
+<div class="packet-remain">
+	<div class="surplusPacket">剩余红包</div>
+	<div class="packetNum"><span class="num" id="remain_number">{{remain}}</span>个</div>	
+</div>
+
+<script>
+(function() {
+	var remain_number = $('#remain_number');
+	function updateRemain(interval) {
+		socket.emit('screen/packet/remain', null, function(err, data) {
+			if (data.status === 3) {
+				location.href = '/packet/result';
+			}
+
+			if ($.isNumeric(data.remain)) {
+				remain_number.text(data.remain);
+			}
+
+			setTimeout(function() {
+				updateRemain(interval);
+			}, interval);
+		});
+	}
+
+	updateRemain(300);
+})();
+</script>

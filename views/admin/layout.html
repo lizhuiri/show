@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{title}}</title>
+		<link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+		<link rel='stylesheet' href='/stylesheets/admin.css' />
+		<link rel="stylesheet" type="text/css" href="/messenger/css/messenger.css">
+		<link rel="stylesheet" type="text/css" href="/messenger/css/messenger-spinner.css">
+		<link rel="stylesheet" type="text/css" href="/messenger/css/messenger-theme-flat.css">
+		<script src="/javascripts/jquery-1.11.0.min.js"></script>
+		<script src="/javascripts/ajax.js"></script>
+		<script src="/javascripts/bootstrap.min.js"></script>
+		<script>
+				window._io_token_ = "{{_io_token_}}";
+		</script>
+		<script src="/javascripts/socket.io.js"></script>
+		<script src="/javascripts/socket.js"></script>
+		<script src="/messenger/js/messenger.js"></script>
+		<script src="/messenger/js/messenger-theme-flat.js"></script>
+	</head>
+	<body>
+		<!--顶部导航-->
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="/{{_admin_page_}}/user/list"><img src="/images/suntengLogo.png" alt=""></a>
+				</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">签到<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="/wx/sign/qr" target="_banck">签到二维码</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="/{{_admin_page_}}/user/list">员工列表</a></li>
+								<li><a href="/{{_admin_page_}}/user/add">添加员工</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="/{{_admin_page_}}/guest/list">嘉宾</a></li>
+							</ul>
+						</li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">红包<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="/{{_admin_page_}}/packet/setup">红包数额配置</a></li>
+								<li><a href="/{{_admin_page_}}/packet/result">查看结果</a></li>
+								<li><a href="/{{_admin_page_}}/packet/record">查看记录</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="/wx/packet/qr" target="_blank">摇一摇二维码</a></li>
+							</ul>
+						</li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">抽奖<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="/{{_admin_page_}}/prize/quick">快速开始</a></li>
+								<li><a href="/{{_admin_page_}}/prize">抽奖结果</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="/{{_admin_page_}}/prize/setup">手动配置下一轮</a></li>
+							</ul>
+						</li>
+						<li>
+							<a href="/{{_admin_page_}}/screen/ctrl">大屏控制</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		<div class="container masthead">
+			{{{body}}}
+		</div>
+
+
+
+
+
+		<div class="modal fade" id="checkPass1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title" id="myModalLabel">审核通过</h4>
+					</div>
+					<div class="modal-body">
+						<p class="guestHint">嘉宾资料符合，可以参加公司年会活动</p>
+						<form>
+							<div class="form-group">
+								<label for="guestName">嘉宾姓名</label>
+								<input type="email" class="form-control" id="guestName1" placeholder="嘉宾姓名">
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+						<button type="button" class="btn btn-success trial-confirm-layout" data-dismiss="modal">确定</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="modal fade" id="delete1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+						<h4 class="modal-title" id="myModalLabel">确认删除</h4>
+					</div>
+					<div class="modal-body">
+						<p class="guestHint">确定删除该用户吗？</p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default delete-cancel-layout" data-dismiss="modal">关闭</button>
+						<button type="button" class="btn btn-success delete-confirm-layout" data-dismiss="modal">确定</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		socket.on('_server_push_/guest_sign_in', function (err, data) {
+		    if(err){
+		        alert(err);
+		    }else{
+		        if(data.openid){
+		            message(data);
+		        }
+		    }
+		});
+
+		socket.emit('admin/guest/initMessenger', null, function(err, data) {
+			if(err){
+				alert(err);
+			}else{
+				if(data){
+					for(let item of data.items){
+						message(item);
+					}
+				}
+			}
+		})
+
+		var map = new Map();
+		var openid = null;
+		Messenger.options = {
+			theme: 'flat',
+			maxMessages: 10
+		}
+
+		function message(data) {
+			var msg;
+			msg = Messenger().post({
+				message: '<div class="guest-sign-messager-container"><div class="guest-sign-messager-avatar"><img src="'+data.avatar+'" alt="" /></div>嘉宾签到: <span>'+data.wx_nickname+'</span></div>',
+				hideAfter: 0,
+				showCloseButton: true,
+				id: data.openid,
+				actions: {
+					retry: {
+						label: '审核',
+						phrase: 'Retrying TIME',
+						auto: false,
+						action: function() {
+							openid = data.openid;
+							$('#checkPass1').modal('show');
+						} 
+					},
+					cancel: {
+						label: '删除',
+						action: function() {
+							openid = data.openid;
+							$('#delete1').modal('show');
+						}
+					}
+				}
+			});
+			$('.messenger-message').css('padding-left', '129px');
+			map.set(data.openid, msg);
+		}
+
+		$('body').on('_guest_sign_delete_', function(event, openid) {
+			var msg = map.get(openid);
+			if (msg) {
+				msg.cancel();
+				map.delete(openid);
+			}
+		});
+
+		// grid处理
+		$('body').on('_guest_sign_verified_', function(event, openid) {
+			var msg = map.get(openid);
+			if (msg) {
+				msg.cancel();
+				map.delete(openid);
+			}
+		});
+
+
+
+
+		$('.delete-confirm-layout').on('click', function(){
+			socket.emit('admin/guest/delete', {openid: openid}, function(err, data){
+				if (err) {
+					alert('删除失败, 错误消息:' + err);
+				} else {
+					$('body').trigger('_guest_sign_delete_', [data.openid]);
+				}
+			});
+		});
+
+		$('.trial-confirm-layout').on('click', function(){
+			var name = $('#guestName1').val();
+			if(!name){
+				alert('请填写姓名！');
+				return false;
+			}else{
+				socket.emit('admin/guest/trial', {name: name, openid: openid}, function(err, data) {
+					if (err) {
+						alert('审核失败, 错误消息:' + err);
+					} else {
+						$('body').trigger('_guest_sign_verified_', [data.openid]);
+					}
+				});
+			}
+			
+		});
+	</script>
+</html>

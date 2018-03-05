@@ -1,0 +1,62 @@
+<div class="alert alert-warning" role="alert">
+  <strong>注意：</strong> 请等待大屏抽奖页面加载完成后再操作，否则大屏看不到抽奖动画和抽奖结果
+</div>
+<div class="draw-main">
+	<p class="draw-banner"></p>
+	<p class="draw-title">— 抽奖控制台 —</p>
+	<button class="draw-button">
+	</button>
+</div>
+<script type="text/javascript">
+(function() {
+	var button = $('.draw-button');
+	var drawStatus = ('{{running}}'=='true') || false;
+	var lock = false;
+
+	function update_button() {
+		if(drawStatus){
+			button.css('background-image', "url('/images/stopbutton.png')");
+		} else {
+			button.css('background-image', "url('/images/startbutton.png')");
+		}
+	}
+
+	function init(){
+		button.on('click', function(){
+			if (lock) {
+				return false;
+			}
+			lock = true;
+			button.prop('disabled', 'disabled');
+			button.addClass('click_animation');
+
+			socket.emit('admin/prize/draw_single', {
+				status: !drawStatus,
+				ticket: '{{ticket}}'
+			}, function(err, data) {
+				if (err) {
+					alert(err);
+					lock = false;
+					button.prop('disabled', '');
+				}else{
+					drawStatus = !drawStatus;
+				}
+			});
+		});
+		button.on('animationend', function(evt) {
+			button.removeClass('click_animation');
+		});
+
+		socket.on('_server_push_/screen_prize_done', function(err, data){
+			if (data && data.done) {
+				lock = false;
+				button.prop('disabled', '');
+				update_button();
+			}
+		});
+	}
+
+	update_button();
+	init();
+})();
+</script>

@@ -1,0 +1,55 @@
+<div class="page-form">
+	<form id="prize_test_s">
+	    <div class="form-group">
+	        <label class="control-label">中奖UID：</label>
+	        <div class="page-button">
+	            <input type="text" class="form-control" id="prize_test_s_uid" required>
+	        </div>
+	        <button id="prize_test_s_start" class="btn btn-info ">单个开始</button>
+	        <button class="btn btn-sucess " type="submit">单个结束</button>
+	    </div>
+	</form>
+    <hr>
+    <form id="prize_test_m">
+	    <div class="form-group">
+	        <label class="control-label">中奖UID集合：</label>
+	        <div class="page-button">
+	            <textarea type="text" class="form-control" required rows="5" placeholder="换行分割" id="prize_test_m_uids"></textarea>
+	        </div>
+	        <button class="btn btn-sucess " type="submit">抽取</button>
+	    </div>
+    </form>
+</div>
+<script>
+(function() {
+	$('#prize_test_s_start').on('click', function(evt) {
+		evt.preventDefault();
+		socket.emit('admin/test/prize_s_start', null, function(err, data) {
+		    console.log('单轮抽奖开始: 关注大屏 ');
+		});
+	});
+	$('#prize_test_s').on('submit', function(evt) {
+		evt.preventDefault();
+		var uid = $('#prize_test_s_uid').val().trim();
+		socket.emit('admin/test/prize_s_stop', {
+			uid: uid
+		}, function(err, data) {
+		    console.log('单轮抽奖结束: 关注大屏 ', uid);
+		});
+	});
+
+	$('#prize_test_m').on('submit', function(evt) {
+		evt.preventDefault();
+		var arr = $('#prize_test_m_uids').val().split('\n');
+		var uids = [];
+		for (let i of arr) {
+			uids.push(i.trim());
+		}
+		socket.emit('admin/test/prize_m_take', {
+			uids: uids
+		}, function(err, data) {
+		    console.log('批量抽奖: 关注大屏 ', uids);
+		});
+	});
+})();
+</script>

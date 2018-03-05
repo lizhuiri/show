@@ -1,0 +1,142 @@
+<style>
+	.mb20 {
+		margin-bottom: 20px;
+	}
+	.mr15 {
+		margin-right: 15px;
+	}
+	.prize-qr-image {
+		display: block;
+		width: 360px;
+		margin: 0 auto;
+	}
+	.prize-user-col {
+		text-align: left!important;
+	}
+	.prize-user-col span {
+		width: 134px;
+		display: inline-block;
+	}
+	.panel-body {
+		padding: 0;
+		border-top: none!important;
+		margin-left: -1px;
+		margin-right: -1px;
+	}
+	.panel-body table {
+		margin: 0;
+	}
+	.prize-pull-btn {
+		margin-top: -3px;
+	}
+</style>
+<div class="prize">
+	<button class="btn btn-info mb20" id="close_push_dialog">关闭大屏抽奖结果</button>
+	<!-- 判断抽奖是否开始 -->
+	{{#if has_rounds}}
+		{{#each rounds}}
+		<div class="panel-group" id="accordion{{round}}">
+			<div class="panel panel-default panel_prize">
+				<div class="panel-heading">
+					<div class="panel-title">
+						<a class="panel_prize_h" data-toggle="collapse" data-parent="#accordion" href="#collapseOne{{round}}">
+							{{name}}
+						</a>
+						<button data-round="{{round}}" class="prize-pull-btn pull-right btn btn-sm btn-info">推送到大屏</button>
+					</div>
+				</div>
+				<div id="collapseOne{{round}}" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<table class="userList table table-bordered table-hover">
+							<tr>
+								<th>中奖员工({{count}}人)</th>
+								<th width="130">操作</th>
+								<th width="150">中奖时间</th>
+							</tr>
+							{{#each records}}
+								<tr>
+									<td class="prize-user-col">
+										{{#each users}}
+											{{#if ../is_deleted}}
+												<del>{{name}}</del>
+											{{else}}
+												<span>{{name}}</span>
+											{{/if}}
+										{{/each}}
+									</td>
+									<td>
+										{{#if is_deleted}}
+											<span>已删除</span>
+										{{else}}
+											<button value="{{id}}" class="btn btn-danger prize-delete"  data-toggle="modal" data-target="#delete">删除</button>
+										{{/if}}
+									</td>
+									<td>{{date time 'Y-m-d H:i:s'}}</td>
+								<tr/>
+							{{/each}}
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		{{/each}}
+	{{else}}
+		<div class="prizeDefault">
+			<div class="jumbotron">
+			  <h2>暂无抽奖记录...</h2>
+			</div>
+		</div>
+	{{/if}}
+</div>
+<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+	<div class="modal-content">
+	  <div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		<h4 class="modal-title" id="myModalLabel">确认删除</h4>
+	  </div>
+	  <div class="modal-body">
+		<p class="guestHint">确定删除该轮中奖员工吗，删除后员工可继续参与后续抽奖，本轮抽奖可以重新抽取！</p>
+	  </div>
+	  <div class="modal-footer">
+		<button type="button" class="btn btn-default delete-cancel" data-dismiss="modal">关闭</button>
+		<button type="button" class="btn btn-success delete-confirm" data-dismiss="modal">确定</button>
+	  </div>
+	</div>
+  </div>
+</div>
+<script>
+(function() {
+	$(".prize-pull-btn").on('click', function(evt) {
+		var btn = $(evt.currentTarget);
+		var round = btn.attr('data-round');
+
+		socket.emit('admin/prize/push_result', {round: +round}, function(err) {
+			if (err) {
+				return alert(err);
+			}
+			btn.removeClass('btn-info');
+		});
+	});
+
+	$('#close_push_dialog').on('click', function(evt) {
+		socket.emit('admin/prize/unpush_result', null, function(err) {
+		});
+	});
+
+	var deleteId;
+	$('.userList').on('click', '.prize-delete', function(){
+		deleteId = $(this).val();
+	});
+
+	$('.delete-confirm').on('click', function(){
+		socket.emit('admin/prize/delete', {id: deleteId}, function(err, data){
+			if (err) {
+				alert('删除失败, 错误消息:' + err);
+			}
+			location.reload();
+		});
+	});
+})();
+
+</script>

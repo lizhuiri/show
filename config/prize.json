@@ -1,0 +1,47 @@
+[
+	{
+		"round": 10001,
+		"type": 2,
+		"name": "佛光普照奖",
+		"count": 80,
+		"limit": 20
+	},
+	{
+		"round": 10002,
+		"type": 2,
+		"name": "幸运奖-第一轮",
+		"count": 10,
+		"limit": 10
+	},
+	{
+		"round": 10003,
+		"type": 2,
+		"name": "幸运奖-第二轮",
+		"count": 10,
+		"limit": 10
+	},
+	{
+		"round": 10004,
+		"type": 1,
+		"name": "三等奖",
+		"count": 5
+	},
+	{
+		"round": 10005,
+		"type": 1,
+		"name": "二等奖",
+		"count": 3
+	},
+	{
+		"round": 10006,
+		"type": 1,
+		"name": "一等奖",
+		"count": 2
+	}
+	,{
+		"round": 10007,
+		"type": 1,
+		"name": "可能加抽N个",
+		"count": 10
+	}
+]

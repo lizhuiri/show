@@ -1,0 +1,135 @@
+<style>
+    .page-button {position: relative;}
+    .pop { position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%; opacity: 0; transition: opacity ease-in-out .3s 1s}
+    .fontRed{color: red}
+    .page-search {
+        margin: 20px 0;
+        width: 350px;
+        float: right;
+    }
+    .page-extra {
+        margin-top: 20px;
+        line-height: 34px;
+    }
+    .orange {
+        color: orange;
+    }
+    .btn-search{
+        display: inline-block;
+        border-radius: 2px !important
+    }
+</style>
+<div class="page-button">
+    <button class="btn btn-success btn-sendEmail" {{#if hasSendEmail}} disabled {{/if}} data-toggle="modal" data-target="#sendEmail">发送注册邮件</button>
+    <div class="alert alert-success pop">已通知后台进行邮件发送!</div>
+</div>
+<h3 class="page-title">员工列表</h3>
+<div class="clearfix">
+    <form action="?page={{page}}" method="post" class="page-search">
+        <div class="input-group ">
+            <input type="text" class="form-control" id="searchUser" name="search" value="{{search}}" placeholder="请输入姓名或邮箱"/>
+            <span class="input-group-btn">
+                <input type="submit" value="查找" class="btn btn-info btn-search" >     
+            </span> 
+        </div>
+    </form>
+    <div class="pull-left page-extra"><span class="orange">{{unregistered_count}}</span> 人未注册,  <span class="orange">{{unsigned_count}}</span> 人未签到</div>
+</div>
+<table class="userList table table-bordered table-hover" id="tableList">
+    <tr>
+        <th>用户名</th>
+        <th>头像</th>
+        <th>Email</th>
+        <th>注册二维码</th>
+        <th>是否注册</th>
+        <th>是否签到</th>
+        <th>签到时间</th>
+    </tr>
+
+    {{#each users}}
+    <tr>
+        <td>{{name}}</td>
+        <td>
+            {{#if avatar}}
+			<a href="{{avatar}}" target="_blank">
+				<img class="icon_img" src="{{avatar}}">
+			</a>
+			{{/if}}
+        </td>
+        <td>{{email}}</td>
+        <td>
+			<a target="_blank" href="/wx/reg/qr?ticket={{ticket}}">
+				打开二维码
+				<!--<img class="icon_img" src="/wx/reg/qr?ticket={{ticket}}">-->
+			</a>
+        </td>
+
+        {{#if openid}}
+        <td class="registered">已注册</td>
+        {{else}}
+        <td class="unRegistered">未注册</td>
+        {{/if}} {{#if signed}}
+        <td>已签到</td>
+        {{else}}
+        <td class="unSign">未签到</td>
+        {{/if}}
+        <td>{{date sign_time 'H:i:s'}}</td>
+        <tr/> {{/each}}
+</table>
+<!-- 分页 -->
+<nav aria-label="Page navigation">
+    <ul class="pagination pull-right">
+        <li>
+            <a href="/{{_admin_page_}}/user/list?page={{expression page '-' 1}}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {{#each pageAry}}
+        <li><a href="/{{../_admin_page_}}/user/list?page={{expression @index '+' 1}}">{{expression @index '+' 1}}</a></li>
+        {{/each}}
+        <li>
+            <a href="/{{_admin_page_}}/user/list?page={{expression page '+' 1}}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- 确认发送邮件模态框 -->
+<div class="modal fade" id="sendEmail" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">发送邮件</h4>
+            </div>
+            <div class="modal-body">
+                <p>请注意，你将群发邮件给所有员工，让大家完成年会活动的注册(<b style="color:#ff9900">此邮件为群发，仅能使用一次，请再次确认是否所有员工都已导入，发送请慎重！</b>)</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-success" data-dismiss="modal" id="confirmEmail">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    (function(){
+         $('#confirmEmail').click(function(evt) {
+        socket.emit('admin/user/sendEmail', null, function(err, data) {
+            if (err) {
+                alert(err);
+            }else {
+                $('.btn-sendEmail').prop('disabled', 'disabled');
+                $('.pop').css('opacity', 1);
+                setTimeout(function() {
+                    $('.pop').css('opacity', 0);
+                }, 2e3);
+            }
+        });
+    });
+        
+    })()
+</script>

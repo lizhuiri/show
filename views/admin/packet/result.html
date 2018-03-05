@@ -1,0 +1,41 @@
+<div class="packetList">
+	<h3 class="page-title">红包结果(按手气最佳排序)</h3>
+	<a href="./export" class="btn btn-primary page-button">导出excel</a>
+	<table class="userList table table-bordered table-hover">
+		<tr>
+			<th>姓名</th>
+			<th>头像</th>
+			<th>总额(元)</th>
+			<th>最后一个红包时间</th>
+		</tr>
+
+		{{#each items}}
+		<tr>
+			<td>{{name}}</td>
+			<td><img class="icon_img" src="{{avatar}}"></td>
+			<td>{{amount}}</td>
+			<td>{{date time 'Y-m-d H:i:s'}}</td>
+		<tr/>
+		{{/each}}
+	</table>
+
+	<!-- 分页 -->
+	<nav aria-label="Page navigation">
+	  <ul class="pagination pull-right">
+	    <li>
+	      <a href="/{{_admin_page_}}/packet/result?page={{expression page '-' 1}}" aria-label="Previous">
+	        <span aria-hidden="true">&laquo;</span>
+	      </a>
+	    </li>
+	    {{#each pageAry}}
+	    	<li><a href="/{{../_admin_page_}}/packet/result?page={{expression @index '+' 1}}">{{expression @index '+' 1}}</a></li>
+	    {{/each}}
+	    <li>
+	      <a href="/{{_admin_page_}}/packet/result?page={{expression page '+' 1}}" aria-label="Next">
+	        <span aria-hidden="true">&raquo;</span>
+	      </a>
+	    </li>
+	  </ul>
+	</nav>
+</div>
+

@@ -1,0 +1,45 @@
+<style type="text/css">
+	body  {
+		height: 100%;
+		background-image: url('/images/reg_suc_bg.jpg');
+		background-repeat: no-repeat;
+		background-size: cover;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+	.regs_main{
+		padding-top: 100px;
+		color: #fff;
+	}
+	.regs_avatar{
+		margin: 0 auto;
+		width: 160px;
+		height: 160px;
+		overflow: hidden;
+		border-radius: 50%;
+		border: 6px solid white;
+	}
+	.regs_avatar img{
+		width: 160px;
+		height: 160px;
+	}
+	.regs_name{
+		margin-top: 10px;
+		height: 60px;
+		line-height: 60px;
+		font-size: 26px;
+		text-align: center;
+	}
+	.regs_title{
+		font-size: 48px;
+	}
+</style>
+<div class="regs_main">
+	<div class="regs_avatar">
+		<img src="{{avatar}}">
+	</div>
+	<div class="regs_name">
+		{{name}}
+	</div>
+</div>
