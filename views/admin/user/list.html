@@ -19,10 +19,6 @@
         border-radius: 2px !important
     }
 </style>
-<div class="page-button">
-    <button class="btn btn-success btn-sendEmail" {{#if hasSendEmail}} disabled {{/if}} data-toggle="modal" data-target="#sendEmail">发送注册邮件</button>
-    <div class="alert alert-success pop">已通知后台进行邮件发送!</div>
-</div>
 <h3 class="page-title">员工列表</h3>
 <div class="clearfix">
     <form action="?page={{page}}" method="post" class="page-search">
@@ -33,7 +29,6 @@
             </span> 
         </div>
     </form>
-    <div class="pull-left page-extra"><span class="orange">{{unregistered_count}}</span> 人未注册,  <span class="orange">{{unsigned_count}}</span> 人未签到</div>
 </div>
 <table class="userList table table-bordered table-hover" id="tableList">
     <tr>
@@ -74,7 +69,8 @@
         <td class="unSign">未签到</td>
         {{/if}}
         <td>{{date sign_time 'H:i:s'}}</td>
-        <tr/> {{/each}}
+    <tr/>
+    {{/each}}
 </table>
 <!-- 分页 -->
 <nav aria-label="Page navigation">
@@ -114,22 +110,3 @@
     </div>
 </div>
 
-
-<script>
-    (function(){
-         $('#confirmEmail').click(function(evt) {
-        socket.emit('admin/user/sendEmail', null, function(err, data) {
-            if (err) {
-                alert(err);
-            }else {
-                $('.btn-sendEmail').prop('disabled', 'disabled');
-                $('.pop').css('opacity', 1);
-                setTimeout(function() {
-                    $('.pop').css('opacity', 0);
-                }, 2e3);
-            }
-        });
-    });
-        
-    })()
-</script>

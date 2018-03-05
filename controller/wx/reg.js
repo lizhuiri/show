@@ -23,32 +23,9 @@ exports.qr = function(req, res) {
 
 // 注册页面渲染
 exports.index = function(req, res) {
-	var ticket = req.data.ticket;
-
-	return Promise.all([
-		auth.get_wx_user(req, res),
-		User.findOne({
-			ticket: ticket
-		})
-	]).then(function(values) {
-		var wx_user = values[0];
-		var user = values[1];
-
-		if (!user) {
-			return Promise.reject("非法ticket！");
-		}
-
-		if (!wx_user) {
-			return Promise.reject("获取微信授权失败！");
-		}
-
-		return {
-			title: "舜飞2018年度晚宴-员工注册",
-			ticket: ticket,
-			name: user.name,
-			avatar: user.avatar || ''
-		}
-	});
+	return {
+		title: "舜飞2018年度晚宴-员工注册"
+	}
 }
 
 // 注册页面提交
